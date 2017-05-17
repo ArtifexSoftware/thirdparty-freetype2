@@ -25,8 +25,9 @@
 #include FT_INTERNAL_OBJECTS_H
 #include FT_INTERNAL_TYPE1_TYPES_H
 #include FT_INTERNAL_HASH_H
+#include FT_INTERNAL_TRUETYPE_TYPES_H
 #include FT_SERVICE_POSTSCRIPT_CMAPS_H
-
+/*TODO(ewaldhew): link cffobjs.h: move it to freetype/internal? */
 
 FT_BEGIN_HEADER
 
@@ -702,6 +703,240 @@ FT_BEGIN_HEADER
 
   } T1_DecoderRec;
 
+  /*************************************************************************/
+  /*************************************************************************/
+  /*****                                                               *****/
+  /*****                        CFF BUILDER                            *****/
+  /*****                                                               *****/
+  /*************************************************************************/
+  /*************************************************************************/
+
+
+#if 0
+  typedef FT_Error
+  (*CFF_Builder_Check_Points_Func)( CFF_Builder*  builder,
+                                    FT_Int        count );
+
+  typedef void
+  (*CFF_Builder_Add_Point_Func)( CFF_Builder*  builder,
+                                 FT_Pos        x,
+                                 FT_Pos        y,
+                                 FT_Byte       flag );
+  typedef FT_Error
+  (*CFF_Builder_Add_Point1_Func)( CFF_Builder*  builder,
+                                  FT_Pos        x,
+                                  FT_Pos        y );
+  typedef FT_Error
+  (*CFF_Builder_Start_Point_Func)( CFF_Builder*  builder,
+                                   FT_Pos        x,
+                                   FT_Pos        y );
+  typedef void
+  (*CFF_Builder_Close_Contour_Func)( CFF_Builder*  builder );
+
+  /* static */
+  typedef FT_Error
+  (*CFF_Builder_Add_Contour_Func)( CFF_Builder*  builder );
+
+  typedef const struct CFF_Builder_FuncsRec_*  CFF_Builder_Funcs;
+
+  typedef struct  CFF_Builder_FuncsRec_
+  {
+    /* static */
+    void
+    (*init)( CFF_Builder*   builder,
+             TT_Face        face,
+             CFF_Size       size,
+             CFF_GlyphSlot  glyph,
+             FT_Bool        hinting );
+
+    /* static */
+    void
+    (*done)( CFF_Builder*  builder );
+
+    CFF_Builder_Check_Points_Func   check_points;
+    CFF_Builder_Add_Point_Func      add_point;
+    CFF_Builder_Add_Point1_Func     add_point1;
+    CFF_Builder_Start_Point_Func    start_point;
+    CFF_Builder_Close_Contour_Func  close_contour;
+    CFF_Builder_Add_Contour_Func    add_contour;
+
+  } CFF_Builder_FuncsRec;
+#endif
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Structure>                                                           */
+  /*    CFF_Builder                                                        */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*     A structure used during glyph loading to store its outline.       */
+  /*                                                                       */
+  /* <Fields>                                                              */
+  /*    memory        :: The current memory object.                        */
+  /*                                                                       */
+  /*    face          :: The current face object.                          */
+  /*                                                                       */
+  /*    glyph         :: The current glyph slot.                           */
+  /*                                                                       */
+  /*    loader        :: The current glyph loader.                         */
+  /*                                                                       */
+  /*    base          :: The base glyph outline.                           */
+  /*                                                                       */
+  /*    current       :: The current glyph outline.                        */
+  /*                                                                       */
+  /*    pos_x         :: The horizontal translation (if composite glyph).  */
+  /*                                                                       */
+  /*    pos_y         :: The vertical translation (if composite glyph).    */
+  /*                                                                       */
+  /*    left_bearing  :: The left side bearing point.                      */
+  /*                                                                       */
+  /*    advance       :: The horizontal advance vector.                    */
+  /*                                                                       */
+  /*    bbox          :: Unused.                                           */
+  /*                                                                       */
+  /*    path_begun    :: A flag which indicates that a new path has begun. */
+  /*                                                                       */
+  /*    load_points   :: If this flag is not set, no points are loaded.    */
+  /*                                                                       */
+  /*    no_recurse    :: Set but not used.                                 */
+  /*                                                                       */
+  /*    metrics_only  :: A boolean indicating that we only want to compute */
+  /*                     the metrics of a given glyph, not load all of its */
+  /*                     points.                                           */
+  /*                                                                       */
+  /*    hints_funcs   :: Auxiliary pointer for hinting.                    */
+  /*                                                                       */
+  /*    hints_globals :: Auxiliary pointer for hinting.                    */
+  /*                                                                       */
+  typedef struct  CFF_Builder_
+  {
+    FT_Memory       memory;
+    TT_Face         face;
+    CFF_GlyphSlot   glyph;
+    FT_GlyphLoader  loader;
+    FT_Outline*     base;
+    FT_Outline*     current;
+
+    FT_Pos          pos_x;
+    FT_Pos          pos_y;
+
+    FT_Vector       left_bearing;
+    FT_Vector       advance;
+
+    FT_BBox         bbox;          /* bounding box */
+    FT_Bool         path_begun;
+    FT_Bool         load_points;
+    FT_Bool         no_recurse;
+
+    FT_Bool         metrics_only;
+
+    void*           hints_funcs;    /* hinter-specific */
+    void*           hints_globals;  /* hinter-specific */
+
+    //CFF_Builder_FuncsRec  funcs;
+
+  } CFF_Builder;
+
+
+  /*************************************************************************/
+  /*************************************************************************/
+  /*****                                                               *****/
+  /*****                        CFF DECODER                            *****/
+  /*****                                                               *****/
+  /*************************************************************************/
+  /*************************************************************************/
+
+#define CFF_MAX_OPERANDS        48
+#define CFF_MAX_SUBRS_CALLS     16  /* maximum subroutine nesting;         */
+                                    /* only 10 are allowed but there exist */
+                                    /* fonts like `HiraKakuProN-W3.ttf'    */
+                                    /* (Hiragino Kaku Gothic ProN W3;      */
+                                    /* 8.2d6e1; 2014-12-19) that exceed    */
+                                    /* this limit                          */
+#define CFF_MAX_TRANS_ELEMENTS  32
+
+  /* execution context charstring zone */
+
+  typedef struct  CFF_Decoder_Zone_
+  {
+    FT_Byte*  base;
+    FT_Byte*  limit;
+    FT_Byte*  cursor;
+
+  } CFF_Decoder_Zone;
+
+
+  typedef struct  CFF_Decoder_
+  {
+    CFF_Builder        builder;
+    CFF_Font           cff;
+
+    FT_Fixed           stack[CFF_MAX_OPERANDS + 1];
+    FT_Fixed*          top;
+
+    CFF_Decoder_Zone   zones[CFF_MAX_SUBRS_CALLS + 1];
+    CFF_Decoder_Zone*  zone;
+
+    FT_Int             flex_state;
+    FT_Int             num_flex_vectors;
+    FT_Vector          flex_vectors[7];
+
+    FT_Pos             glyph_width;
+    FT_Pos             nominal_width;
+
+    FT_Bool            read_width;
+    FT_Bool            width_only;
+    FT_Int             num_hints;
+    FT_Fixed           buildchar[CFF_MAX_TRANS_ELEMENTS];
+
+    FT_UInt            num_locals;
+    FT_UInt            num_globals;
+
+    FT_Int             locals_bias;
+    FT_Int             globals_bias;
+
+    FT_Byte**          locals;
+    FT_Byte**          globals;
+
+    FT_Byte**          glyph_names;   /* for pure CFF fonts only  */
+    FT_UInt            num_glyphs;    /* number of glyphs in font */
+
+    FT_Render_Mode     hint_mode;
+
+    FT_Bool            seac;
+
+    CFF_SubFont        current_subfont; /* for current glyph_index */
+
+  } CFF_Decoder;
+
+  typedef const struct CFF_Decoder_FuncsRec_*  CFF_Decoder_Funcs;
+
+  typedef struct  CFF_Decoder_FuncsRec_
+  {
+    void
+    (*init)( CFF_Decoder*    decoder,
+             TT_Face         face,
+             CFF_Size        size,
+             CFF_GlyphSlot   slot,
+             FT_Bool         hinting,
+             FT_Render_Mode  hint_mode );
+
+    FT_Error
+    (*prepare)( CFF_Decoder*  decoder,
+                CFF_Size      size,
+                FT_UInt       glyph_index );
+
+    FT_Error
+    (*parse_charstrings)( CFF_Decoder*  decoder,
+                          FT_Byte*      charstring_base,
+                          FT_ULong      charstring_len
+#ifdef CFF_CONFIG_OPTION_OLD_ENGINE
+//TODO(ewaldhew): seems hacky, is there a better way to do this?
+                         ,FT_Bool       in_dict
+#endif
+                          );
+
+  } CFF_Decoder_FuncsRec;
 
   /*************************************************************************/
   /*************************************************************************/
@@ -814,6 +1049,8 @@ FT_BEGIN_HEADER
 
     /* fields after this comment line were added after version 2.1.10 */
     const AFM_Parser_FuncsRec*  afm_parser_funcs;
+
+    const CFF_Decoder_FuncsRec*  cff_decoder_funcs;
 
   } PSAux_ServiceRec, *PSAux_Service;
 

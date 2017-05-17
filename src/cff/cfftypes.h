@@ -394,6 +394,10 @@ FT_BEGIN_HEADER
     /* since version 2.7.1 */
     CFF_VStoreRec    vstore;        /* parsed vstore structure */
 
+    /* interface to PostScript Aux service */
+    //TODO(ewaldhew): should this be in ttface?
+    PSAux_Service    psaux;
+
   } CFF_FontRec;
 
 

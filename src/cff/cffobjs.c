@@ -39,6 +39,8 @@
 
 #include "cfferrs.h"
 
+#include FT_INTERNAL_POSTSCRIPT_AUX_H
+
 
   /*************************************************************************/
   /*                                                                       */
@@ -493,6 +495,7 @@
     SFNT_Service        sfnt;
     FT_Service_PsCMaps  psnames;
     PSHinter_Service    pshinter;
+    PSAux_Service       psaux;
     FT_Bool             pure_cff    = 1;
     FT_Bool             cff2        = 0;
     FT_Bool             sfnt_format = 0;
@@ -512,6 +515,15 @@
 
     pshinter = (PSHinter_Service)FT_Get_Module_Interface(
                  library, "pshinter" );
+
+    psaux = (PSAux_Service)FT_Get_Module_Interface(
+              library, "psaux" );
+    if ( !psaux )
+    {
+      FT_ERROR(( "cff_face_init: cannot access `psaux' module\n" ));
+      error = FT_THROW( Missing_Module );
+      goto Exit;
+    }
 
     FT_TRACE2(( "CFF driver\n" ));
 
@@ -614,6 +626,7 @@
 
       cff->pshinter = pshinter;
       cff->psnames  = psnames;
+      cff->psaux    = psaux;
 
       cffface->face_index = face_index & 0xFFFF;
 

@@ -674,6 +674,7 @@
   {
     FT_ASSERT( decoder );
 
+    //TODO(ewaldhew): needs to use func ptr too
     cff_free_glyph_data( decoder->builder.face,
                          (FT_Byte**)&buf->start,
                          (FT_ULong)( buf->end - buf->start ) );

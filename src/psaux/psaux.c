@@ -25,6 +25,7 @@
 #include "psobjs.c"
 #include "t1cmap.c"
 #include "t1decode.c"
+#include "cffdecode.c"
 
 
 /* END */

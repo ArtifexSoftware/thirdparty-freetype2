@@ -42,7 +42,7 @@
 
 #include "cf2ft.h"
 #include "cf2blues.h"
-#include "cffload.h"
+//#include "cffload.h" //TODO(ewaldhew): link
 
 
 FT_BEGIN_HEADER

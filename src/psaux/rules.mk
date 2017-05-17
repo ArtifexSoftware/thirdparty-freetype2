@@ -33,7 +33,8 @@ PSAUX_DRV_SRC := $(PSAUX_DIR)/psobjs.c   \
                  $(PSAUX_DIR)/t1cmap.c   \
                  $(PSAUX_DIR)/afmparse.c \
                  $(PSAUX_DIR)/psconv.c   \
-                 $(PSAUX_DIR)/psauxmod.c
+                 $(PSAUX_DIR)/psauxmod.c \
+                 $(PSAUX_DIR)/cffdecode.c 
 
 # PSAUX driver headers
 #
