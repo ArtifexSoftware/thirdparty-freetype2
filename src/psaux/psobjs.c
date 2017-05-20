@@ -1836,8 +1836,7 @@
     builder->advance.x      = 0;
     builder->advance.y      = 0;
 
-    //TODO(ewaldhew): what is this even used for? (ref t1_builder_funcs)
-    //builder->funcs = cff_builder_funcs;
+    builder->funcs = cff_builder_funcs;
   }
 
 

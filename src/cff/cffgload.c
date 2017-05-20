@@ -21,6 +21,7 @@
 #include FT_INTERNAL_STREAM_H
 #include FT_INTERNAL_SFNT_H
 #include FT_INTERNAL_CALC_H
+#include FT_INTERNAL_POSTSCRIPT_AUX_H
 #include FT_OUTLINE_H
 #include FT_CFF_DRIVER_H
 
@@ -41,7 +42,7 @@
 #define FT_COMPONENT  trace_cffgload
 
 
-FT_LOCAL_DEF( FT_Error )
+  FT_LOCAL_DEF( FT_Error )
   cff_get_glyph_data( TT_Face    face,
                       FT_UInt    glyph_index,
                       FT_Byte**  pointer,
@@ -148,7 +149,7 @@ FT_LOCAL_DEF( FT_Error )
     *max_advance = 0;
 
     /* Initialize load decoder */
-    decoder_funcs->init( &decoder, face, 0, 0, 0, 0 );
+    decoder_funcs->init( &decoder, face, 0, 0, 0, 0, 0, 0 );
 
     decoder.builder.metrics_only = 1;
     decoder.builder.load_points  = 0;
@@ -403,7 +404,9 @@ FT_LOCAL_DEF( FT_Error )
 
 
       decoder_funcs->init( &decoder, face, size, glyph, hinting,
-                           FT_LOAD_TARGET_MODE( load_flags ) );
+                           FT_LOAD_TARGET_MODE( load_flags )
+                           cff_get_glyph_data,
+                           cff_free_glyph_data );
 
       /* this is for pure CFFs */
       if ( load_flags & FT_LOAD_ADVANCE_ONLY )

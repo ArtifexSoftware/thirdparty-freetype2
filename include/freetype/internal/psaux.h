@@ -712,7 +712,8 @@ FT_BEGIN_HEADER
   /*************************************************************************/
 
 
-#if 0
+#if 1
+  //TODO(ewaldhew): use these in cf2_interp
   typedef FT_Error
   (*CFF_Builder_Check_Points_Func)( CFF_Builder*  builder,
                                     FT_Int        count );
@@ -833,7 +834,7 @@ FT_BEGIN_HEADER
     void*           hints_funcs;    /* hinter-specific */
     void*           hints_globals;  /* hinter-specific */
 
-    //CFF_Builder_FuncsRec  funcs;
+    CFF_Builder_FuncsRec  funcs;
 
   } CFF_Builder;
 
@@ -864,6 +865,18 @@ FT_BEGIN_HEADER
     FT_Byte*  cursor;
 
   } CFF_Decoder_Zone;
+
+
+  typedef FT_Error
+  (*CFF_Decoder_Get_Glyph_Callback)( TT_Face    face,
+                                     FT_UInt    glyph_index,
+                                     FT_Byte**  pointer,
+                                     FT_ULong*  length );
+
+  typedef void
+  (*CFF_Decoder_Free_Glyph_Callback)( TT_Face    face,
+                                      FT_Byte**  pointer,
+                                      FT_ULong   length );
 
 
   typedef struct  CFF_Decoder_
@@ -907,6 +920,9 @@ FT_BEGIN_HEADER
 
     CFF_SubFont        current_subfont; /* for current glyph_index */
 
+    CFF_Decoder_Get_Glyph_Callback   get_glyph_callback;
+    CFF_Decoder_Free_Glyph_Callback  free_glyph_callback;
+
   } CFF_Decoder;
 
   typedef const struct CFF_Decoder_FuncsRec_*  CFF_Decoder_Funcs;
@@ -919,7 +935,9 @@ FT_BEGIN_HEADER
              CFF_Size        size,
              CFF_GlyphSlot   slot,
              FT_Bool         hinting,
-             FT_Render_Mode  hint_mode );
+             FT_Render_Mode  hint_mode,
+             CFF_Decoder_Get_Glyph_Callback   get_callback,
+             CFF_Decoder_Free_Glyph_Callback  free_callback );
 
     FT_Error
     (*prepare)( CFF_Decoder*  decoder,

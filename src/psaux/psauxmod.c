@@ -105,7 +105,7 @@
     &t1_cmap_unicode_class_rec
   };
 
-#if 0
+#if 1
   FT_CALLBACK_TABLE_DEF
   const CFF_Builder_FuncsRec  cff_builder_funcs =
   {

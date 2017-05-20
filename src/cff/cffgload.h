@@ -27,7 +27,6 @@
 
 FT_BEGIN_HEADER
 
-//TODO(ewaldhew): these need to be func ptr too
   FT_LOCAL( FT_Error )
   cff_get_glyph_data( TT_Face    face,
                       FT_UInt    glyph_index,
