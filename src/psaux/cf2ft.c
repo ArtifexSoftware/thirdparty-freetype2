@@ -42,6 +42,12 @@
 #include "cf2font.h"
 #include "cf2error.h"
 
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+#include FT_MULTIPLE_MASTERS_H
+#include FT_SERVICE_MULTIPLE_MASTERS_H
+#endif
+
+#include FT_SERVICE_CFF_TABLE_LOAD_H
 
 #define CF2_MAX_SIZE  cf2_intToFixed( 2000 )    /* max ppem */
 
@@ -326,6 +332,7 @@
       font = (CF2_Font)decoder->cff->cf2_instance.data;
 
       font->memory = memory;
+      font->cffload = (FT_Service_CFFLoad)decoder->cff->cffload;
 
       /* initialize a client outline, to be shared by each glyph rendered */
       cf2_outline_init( &font->outline, font->memory, &font->error );
@@ -456,10 +463,12 @@
                            CF2_UInt     *len,
                            FT_Fixed*    *vec )
   {
-    FT_ASSERT( decoder && decoder->builder.face );
+    TT_Face  face = decoder->builder.face;
+    FT_Service_MultiMasters  mm = (FT_Service_MultiMasters)face->mm;
+    FT_ASSERT( decoder && face );
     FT_ASSERT( vec && len );
-
-    return cff_get_var_blend( decoder->builder.face, len, NULL, vec, NULL );
+    
+    return mm->get_var_blend( FT_FACE( face ), len, NULL, vec, NULL );
   }
 #endif
 

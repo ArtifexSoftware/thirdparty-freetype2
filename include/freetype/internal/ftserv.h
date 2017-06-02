@@ -1004,7 +1004,7 @@ FT_BEGIN_HEADER
 #define FT_SERVICE_WINFNT_H             <freetype/internal/services/svwinfnt.h>
 #define FT_SERVICE_FONT_FORMAT_H        <freetype/internal/services/svfntfmt.h>
 #define FT_SERVICE_TRUETYPE_GLYF_H      <freetype/internal/services/svttglyf.h>
-
+#define FT_SERVICE_CFF_TABLE_LOAD_H     <freetype/internal/services/svcfftl.h>
  /* */
 
 FT_END_HEADER
