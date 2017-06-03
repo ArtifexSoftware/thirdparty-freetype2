@@ -712,57 +712,8 @@ FT_BEGIN_HEADER
   /*************************************************************************/
 
 
-#if 1
-  //TODO(ewaldhew): use these in cf2_interp
-  typedef FT_Error
-  (*CFF_Builder_Check_Points_Func)( CFF_Builder*  builder,
-                                    FT_Int        count );
+  typedef struct  CFF_Builder_FuncsRec_ CFF_Builder_FuncsRec;
 
-  typedef void
-  (*CFF_Builder_Add_Point_Func)( CFF_Builder*  builder,
-                                 FT_Pos        x,
-                                 FT_Pos        y,
-                                 FT_Byte       flag );
-  typedef FT_Error
-  (*CFF_Builder_Add_Point1_Func)( CFF_Builder*  builder,
-                                  FT_Pos        x,
-                                  FT_Pos        y );
-  typedef FT_Error
-  (*CFF_Builder_Start_Point_Func)( CFF_Builder*  builder,
-                                   FT_Pos        x,
-                                   FT_Pos        y );
-  typedef void
-  (*CFF_Builder_Close_Contour_Func)( CFF_Builder*  builder );
-
-  /* static */
-  typedef FT_Error
-  (*CFF_Builder_Add_Contour_Func)( CFF_Builder*  builder );
-
-  typedef const struct CFF_Builder_FuncsRec_*  CFF_Builder_Funcs;
-
-  typedef struct  CFF_Builder_FuncsRec_
-  {
-    /* static */
-    void
-    (*init)( CFF_Builder*   builder,
-             TT_Face        face,
-             CFF_Size       size,
-             CFF_GlyphSlot  glyph,
-             FT_Bool        hinting );
-
-    /* static */
-    void
-    (*done)( CFF_Builder*  builder );
-
-    CFF_Builder_Check_Points_Func   check_points;
-    CFF_Builder_Add_Point_Func      add_point;
-    CFF_Builder_Add_Point1_Func     add_point1;
-    CFF_Builder_Start_Point_Func    start_point;
-    CFF_Builder_Close_Contour_Func  close_contour;
-    CFF_Builder_Add_Contour_Func    add_contour;
-
-  } CFF_Builder_FuncsRec;
-#endif
 
   /*************************************************************************/
   /*                                                                       */
@@ -837,6 +788,56 @@ FT_BEGIN_HEADER
     CFF_Builder_FuncsRec  funcs;
 
   } CFF_Builder;
+
+
+  typedef FT_Error
+  (*CFF_Builder_Check_Points_Func)( CFF_Builder*  builder,
+                                    FT_Int        count );
+
+  typedef void
+  (*CFF_Builder_Add_Point_Func)( CFF_Builder*  builder,
+                                 FT_Pos        x,
+                                 FT_Pos        y,
+                                 FT_Byte       flag );
+  typedef FT_Error
+  (*CFF_Builder_Add_Point1_Func)( CFF_Builder*  builder,
+                                  FT_Pos        x,
+                                  FT_Pos        y );
+  typedef FT_Error
+  (*CFF_Builder_Start_Point_Func)( CFF_Builder*  builder,
+                                   FT_Pos        x,
+                                   FT_Pos        y );
+  typedef void
+  (*CFF_Builder_Close_Contour_Func)( CFF_Builder*  builder );
+
+  /* static */
+  typedef FT_Error
+  (*CFF_Builder_Add_Contour_Func)( CFF_Builder*  builder );
+
+  typedef const struct CFF_Builder_FuncsRec_*  CFF_Builder_Funcs;
+
+  struct  CFF_Builder_FuncsRec_
+  {
+    /* static */
+    void
+    (*init)( CFF_Builder*   builder,
+             TT_Face        face,
+             CFF_Size       size,
+             CFF_GlyphSlot  glyph,
+             FT_Bool        hinting );
+
+    /* static */
+    void
+    (*done)( CFF_Builder*  builder );
+
+    CFF_Builder_Check_Points_Func   check_points;
+    CFF_Builder_Add_Point_Func      add_point;
+    CFF_Builder_Add_Point1_Func     add_point1;
+    CFF_Builder_Start_Point_Func    start_point;
+    CFF_Builder_Close_Contour_Func  close_contour;
+    CFF_Builder_Add_Contour_Func    add_contour;
+
+  };
 
 
   /*************************************************************************/
