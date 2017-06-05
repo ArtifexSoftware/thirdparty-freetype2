@@ -20,6 +20,7 @@
 #include FT_INTERNAL_POSTSCRIPT_AUX_H
 #include FT_INTERNAL_DEBUG_H
 #include FT_INTERNAL_CALC_H
+#include FT_INTERNAL_CFF_OBJECTS_TYPES_H
 
 #include "psobjs.h"
 #include "psconv.h"
@@ -1816,8 +1817,7 @@
 
       if ( hinting && size )
       {
-        FT_Size       ftsize   = FT_SIZE( size );
-        CFF_Internal  internal = (CFF_Internal)ftsize->internal->module_data;
+        CFF_Internal  internal = (CFF_Internal)size->root.internal->module_data;
 
 
         if ( internal )

@@ -122,7 +122,7 @@
 #endif
 
   FT_CALLBACK_TABLE_DEF
-  const CFF_Decoder_Funcs  cff_decoder_funcs =
+  const CFF_Decoder_FuncsRec  cff_decoder_funcs =
   {
     cff_decoder_init,              /* init              */
     cff_decoder_prepare,           /* prepare           */
