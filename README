@@ -1,3 +1,6 @@
+Use the "new" folder.
+
+
 To compile and execute
 
 gcc example1.c ksvsk.c murmur3.c -Wall -I /usr/local/include/freetype2/ -lfreetype -o example1 
