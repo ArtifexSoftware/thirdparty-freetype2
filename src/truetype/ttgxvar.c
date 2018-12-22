@@ -1325,6 +1325,9 @@
   {
     GX_Blend  blend = face->blend;
     GX_Value  value, limit;
+    FT_Short mvar_hasc_delta = 0;
+    FT_Short mvar_hdsc_delta = 0;
+    FT_Short mvar_hlgp_delta = 0;
 
 
     if ( !( face->variation_support & TT_FACE_FLAG_VAR_MVAR ) )
@@ -1359,6 +1362,20 @@
         /* since we handle both signed and unsigned values as FT_Short, */
         /* ensure proper overflow arithmetic                            */
         *p = (FT_Short)( value->unmodified + (FT_Short)delta );
+
+        /* Treat hasc, hdsc and hlgp specially, see below. */
+        if (value->tag == MVAR_TAG_HASC)
+        {
+          mvar_hasc_delta = (FT_Short)delta;
+        }
+        else if (value->tag == MVAR_TAG_HDSC)
+        {
+          mvar_hdsc_delta = (FT_Short)delta;
+        }
+        else if (value->tag == MVAR_TAG_HLGP)
+        {
+          mvar_hlgp_delta = (FT_Short)delta;
+        }
       }
     }
 
@@ -1366,25 +1383,30 @@
     {
       FT_Face  root = &face->root;
 
-
-      if ( face->os2.version != 0xFFFFU )
-      {
-        if ( face->os2.sTypoAscender || face->os2.sTypoDescender )
-        {
-          root->ascender  = face->os2.sTypoAscender;
-          root->descender = face->os2.sTypoDescender;
-
-          root->height = root->ascender - root->descender +
-                         face->os2.sTypoLineGap;
-        }
-        else
-        {
-          root->ascender  =  (FT_Short)face->os2.usWinAscent;
-          root->descender = -(FT_Short)face->os2.usWinDescent;
-
-          root->height = root->ascender - root->descender;
-        }
-      }
+      /*
+       * Apply the deltas of hasc, hdsc and hlgp to existing metrics of a face
+       * instead of assigning the modified absolute typo or win metrics.
+       *
+       * Before, the following led to different line metrics between default
+       * outline and instances:
+       *
+       * 1. sfnt_load_face applied the hhea metrics by default.
+       * 2. This code later applied the typo metrics by default.
+       *
+       * The MVAR table supports variations for both typo and win metrics.
+       * According to Behdad Esfahbod, the thinking of the working group was
+       * that no one uses win metrics anymore for setting line metrics (the
+       * specification even calls these metrics "horizontal clipping
+       * ascent/descent"), and new fonts should use typo metrics, so typo
+       * deltas should be applied to whatever sfnt_load_face decided the line
+       * metrics should be: typo metrics when the OS/2 fsSelection bit 7 is
+       * set, hhea metrics otherwise.
+       */
+      FT_Short current_line_gap = root->height - root->ascender + root->descender;
+      root->ascender  = root->ascender + mvar_hasc_delta;
+      root->descender = root->descender + mvar_hdsc_delta;
+      root->height = root->ascender - root->descender +
+                      current_line_gap + mvar_hlgp_delta;
 
       root->underline_position  = face->postscript.underlinePosition -
                                   face->postscript.underlineThickness / 2;
