@@ -373,7 +373,8 @@ FT_BEGIN_HEADER
 #endif /* __GNUC__ */
 
 
-#elif defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
+#elif defined( _MSC_VER ) && ((defined(NDEBUG) && ( _MSC_VER >= 1400 )) || (!defined(NDEBUG) && ( _MSC_VER >= 1500 )))
+  /* VS2005 (_MSC_VER == 1400) does not support BitScanReverse in Debug builds */
 
 #if FT_SIZEOF_INT == 4
 
