@@ -4419,14 +4419,14 @@ FT_BEGIN_HEADER
   /**************************************************************************
    *
    * @enum:
-   *   FT_CompositeMode
+   *   FT_Composite_Mode
    *
    * @description:
    *   An enumeration listing the 'COLR' v1 composite modes used in
    *   @FT_PaintComposite.  For more details on each paint mode, see
    *   'https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators'.
    */
-  typedef enum  CT_Composite_Mode_
+  typedef enum  FT_Composite_Mode_
   {
     FT_COLR_COMPOSITE_CLEAR          = 0,
     FT_COLR_COMPOSITE_SRC            = 1,
@@ -4469,7 +4469,7 @@ FT_BEGIN_HEADER
    *   A structure representing an offset to a `Paint` value stored in any
    *   of the paint tables of a 'COLR' v1 font.  Compare Offset<24> there.
    *   When 'COLR' v1 paint tables represented by FreeType objects such as
-   *   @FT_PaintColrLayers, @FT_PaintComposite, or @FT_PaintTransform
+   *   @FT_PaintColrLayers, @FT_PaintComposite, or @FT_PaintTransformed
    *   reference downstream nested paint tables, we do not immediately
    *   retrieve them but encapsulate their location in this type.  Use
    *   @FT_Get_Paint to retrieve the actual @FT_COLR_Paint object that
@@ -4495,9 +4495,9 @@ FT_BEGIN_HEADER
    * @description:
    *   A structure representing a `PaintColrLayers` table of a 'COLR' v1
    *   font.  This table describes a set of layers that are to be composited
-   *   with composite mode @FT_COLR_COMPOSITE_SRC_OVER.  The return value of
-   *   this function is an @FT_LayerIterator initialized so that it can be
-   *   used with @FT_Get_Paint_Layers to retrieve the @FT_OpaquePaint
+   *   with composite mode `FT_COLR_COMPOSITE_SRC_OVER`.  The return value
+   *   of this function is an @FT_LayerIterator initialized so that it can
+   *   be used with @FT_Get_Paint_Layers to retrieve the @FT_OpaquePaint
    *   objects as references to each layer.
    *
    * @fields:
@@ -4986,9 +4986,9 @@ FT_BEGIN_HEADER
    *
    * @inout:
    *   iterator ::
-   *     The @FT_ColorStopIterator retrieved configured on an @FT_ColorLine,
-   *     retrieved via paint information in
-   *     @FT_Get_Color_Glyph_Layer_Gradients.
+   *     The retrieved @FT_ColorStopIterator, configured on an @FT_ColorLine,
+   *     which in turn got retrieved via paint information in
+   *     @FT_PaintLinearGradient or @FT_PaintRadialGradient.
    *
    * @output:
    *   color_stop ::
@@ -5006,7 +5006,8 @@ FT_BEGIN_HEADER
 
 
   /**************************************************************************
-   * @function
+   *
+   * @function:
    *  FT_Get_Paint
    *
    * @description:
@@ -5024,7 +5025,7 @@ FT_BEGIN_HEADER
    *
    * @output:
    *   paint ::
-   *     The specific @FT_COLOR_Paint object containing information coming
+   *     The specific @FT_COLR_Paint object containing information coming
    *     from one of the font's `Paint*` tables.
    *
    * @return:
