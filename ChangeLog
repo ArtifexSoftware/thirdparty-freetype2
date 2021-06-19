@@ -1,3 +1,15 @@
+2021-07-13  David Turner  <david@freetype.org>
+
+	[smooth] Minor speedup to smooth rasterizer
+
+	This speeds up the smooth rasterizer by avoiding a conditional
+	branches in the hot path.
+
+	* src/smooth/ftgrays.c: Define a null cell used to both as a
+	sentinel for all linked-lists, and to accumulate coverage and
+	area values for "out-of-bounds" cell positions without a
+	conditional check.
+
 2021-07-13  Oleg Oshmyan  <chortos@inbox.lv>
 
 	[base] Fix `FT_Open_Face`'s handling of user-supplied streams.
