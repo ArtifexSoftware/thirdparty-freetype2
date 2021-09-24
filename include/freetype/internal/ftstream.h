@@ -196,9 +196,9 @@ FT_BEGIN_HEADER
                                        FT_BYTE_U32( p, 2,  8 ) | \
                                        FT_BYTE_U32( p, 3,  0 ) )
 
-#define FT_PEEK_OFF3( p )  FT_INT32( FT_BYTE_U32( p, 0, 16 ) | \
-                                     FT_BYTE_U32( p, 1,  8 ) | \
-                                     FT_BYTE_U32( p, 2,  0 ) )
+#define FT_PEEK_OFF3( p )  ( FT_INT32( FT_BYTE_U32( p, 0, 24 ) | \
+                                       FT_BYTE_U32( p, 1, 16 ) | \
+                                       FT_BYTE_U32( p, 2,  8 ) ) >> 8 )
 
 #define FT_PEEK_UOFF3( p )  FT_UINT32( FT_BYTE_U32( p, 0, 16 ) | \
                                        FT_BYTE_U32( p, 1,  8 ) | \
@@ -220,9 +220,9 @@ FT_BEGIN_HEADER
                                           FT_BYTE_U32( p, 1,  8 ) | \
                                           FT_BYTE_U32( p, 0,  0 ) )
 
-#define FT_PEEK_OFF3_LE( p )  FT_INT32( FT_BYTE_U32( p, 2, 16 ) | \
-                                        FT_BYTE_U32( p, 1,  8 ) | \
-                                        FT_BYTE_U32( p, 0,  0 ) )
+#define FT_PEEK_OFF3_LE( p )  ( FT_INT32( FT_BYTE_U32( p, 2, 24 ) | \
+                                          FT_BYTE_U32( p, 1, 16 ) | \
+                                          FT_BYTE_U32( p, 0,  8 ) ) >> 8 )
 
 #define FT_PEEK_UOFF3_LE( p )  FT_UINT32( FT_BYTE_U32( p, 2, 16 ) | \
                                           FT_BYTE_U32( p, 1,  8 ) | \
