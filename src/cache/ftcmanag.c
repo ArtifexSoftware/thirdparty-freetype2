@@ -237,14 +237,14 @@
     FT_Error      error;
 
 
-    node->face_id = face_id;
-
     error = manager->request_face( face_id,
                                    manager->library,
                                    manager->request_data,
                                    &node->face );
     if ( !error )
     {
+      node->face_id = face_id;
+
       /* destroy initial size object; it will be re-created later */
       if ( node->face->size )
         FT_Done_Size( node->face->size );
