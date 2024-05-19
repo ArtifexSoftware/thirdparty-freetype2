@@ -63,7 +63,7 @@ variables:
     - echo "c = 'cl'" >> uwp-crossfile.meson
     - echo "strip = ['true']" >> uwp-crossfile.meson
     - echo "[built-in options]" >> uwp-crossfile.meson
-    - echo "c_args = ['-DWINAPI_FAMILY=WINAPI_FAMILY_APP', '-DUNICODE', '-D_WIN32_WINNT=0x0A00', '-we4013']" >> uwp-crossfile.meson
+    - echo "c_args = ['-ZW', '-D_WINRT_DLL', '-DUNICODE', '-D_WIN32_WINNT=0x0A00', '-we4013']" >> uwp-crossfile.meson
     - echo "c_winlibs = ['windowsapp.lib']" >> uwp-crossfile.meson
   script:
     # For some reason, options are separated by newlines instead of spaces,
