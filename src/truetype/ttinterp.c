@@ -140,6 +140,7 @@
     exec->codeSize = coderange->size;
     exec->IP       = IP;
     exec->curRange = range;
+    exec->iniRange = range;
   }
 
 
@@ -6948,8 +6949,6 @@
       exc->func_write_cvt = Write_CVT;
       exc->func_move_cvt  = Move_CVT;
     }
-
-    exc->iniRange = exc->curRange;
 
     Compute_Funcs( exc );
     Compute_Round( exc, (FT_Byte)exc->GS.round_state );
