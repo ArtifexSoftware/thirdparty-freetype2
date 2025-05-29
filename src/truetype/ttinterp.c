@@ -7432,41 +7432,38 @@
     exec->face = face;
     exec->size = size;
 
-    if ( size )
-    {
-      exec->numFDefs   = size->num_function_defs;
-      exec->maxFDefs   = size->max_function_defs;
-      exec->numIDefs   = size->num_instruction_defs;
-      exec->maxIDefs   = size->max_instruction_defs;
-      exec->FDefs      = size->function_defs;
-      exec->IDefs      = size->instruction_defs;
-      exec->pointSize  = size->point_size;
-      exec->tt_metrics = size->ttmetrics;
-      exec->metrics    = *size->metrics;
+    exec->cvtSize = size->cvt_size;
+    exec->cvt     = size->cvt;
 
-      exec->maxFunc    = size->max_func;
-      exec->maxIns     = size->max_ins;
+    exec->storeSize = size->storage_size;
+    exec->storage   = size->storage;
 
-      for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
-        exec->codeRangeTable[i] = size->codeRangeTable[i];
+    /* XXX: We reserve a little more elements on the stack to deal safely */
+    /*      with broken fonts like arialbs, courbs, timesbs, etc.         */
+    stackSize = face->max_profile.maxStackElements + 32;
+    if ( FT_QRENEW_ARRAY( exec->stack, exec->stackSize, stackSize ) )
+      return error;
+    exec->stackSize = stackSize;
 
-      /* set graphics state */
-      exec->GS = size->GS;
+    /* free previous glyph code range */
+    FT_FREE( exec->glyphIns );
+    exec->glyphSize = 0;
 
-      exec->cvtSize = size->cvt_size;
-      exec->cvt     = size->cvt;
+    for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
+      exec->codeRangeTable[i] = size->codeRangeTable[i];
 
-      exec->storeSize = size->storage_size;
-      exec->storage   = size->storage;
+    exec->numFDefs   = size->num_function_defs;
+    exec->maxFDefs   = size->max_function_defs;
+    exec->numIDefs   = size->num_instruction_defs;
+    exec->maxIDefs   = size->max_instruction_defs;
+    exec->FDefs      = size->function_defs;
+    exec->IDefs      = size->instruction_defs;
+    exec->maxFunc    = size->max_func;
+    exec->maxIns     = size->max_ins;
 
-      exec->twilight  = size->twilight;
-
-      /* In case of multi-threading it can happen that the old size object */
-      /* no longer exists, thus we must clear all glyph zone references.   */
-      FT_ZERO( &exec->zp0 );
-      exec->zp1 = exec->zp0;
-      exec->zp2 = exec->zp0;
-    }
+    exec->pointSize  = size->point_size;
+    exec->tt_metrics = size->ttmetrics;
+    exec->metrics    = *size->metrics;
 
     /* set PPEM and CVT functions */
     if ( exec->metrics.x_ppem != exec->metrics.y_ppem )
@@ -7486,19 +7483,12 @@
       exec->func_move_cvt  = Move_CVT;
     }
 
+    /* set graphics state */
+    exec->GS = size->GS;
     Compute_Funcs( exec );
     Compute_Round( exec, (FT_Byte)exec->GS.round_state );
 
-    /* XXX: We reserve a little more elements on the stack to deal safely */
-    /*      with broken fonts like arialbs, courbs, timesbs, etc.         */
-    stackSize = face->max_profile.maxStackElements + 32;
-    if ( FT_QRENEW_ARRAY( exec->stack, exec->stackSize, stackSize ) )
-      return error;
-    exec->stackSize = stackSize;
-
-    /* free previous glyph code range */
-    FT_FREE( exec->glyphIns );
-    exec->glyphSize = 0;
+    exec->twilight  = size->twilight;
 
     exec->pts.n_points   = 0;
     exec->pts.n_contours = 0;
