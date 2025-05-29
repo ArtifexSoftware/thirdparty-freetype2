@@ -208,311 +208,6 @@
 
   /**************************************************************************
    *
-   *                  EXECUTION CONTEXT ROUTINES
-   *
-   */
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   TT_Done_Context
-   *
-   * @Description:
-   *   Destroys a given context.
-   *
-   * @Input:
-   *   exec ::
-   *     A handle to the target execution context.
-   *
-   *   memory ::
-   *     A handle to the parent memory object.
-   *
-   * @Note:
-   *   Only the glyph loader and debugger should call this function.
-   */
-  FT_LOCAL_DEF( void )
-  TT_Done_Context( TT_ExecContext  exec )
-  {
-    FT_Memory  memory = exec->memory;
-
-
-    /* points zone */
-    exec->maxPoints   = 0;
-    exec->maxContours = 0;
-
-    /* free stack */
-    FT_FREE( exec->stack );
-    exec->stackSize = 0;
-
-    /* free glyf cvt working area */
-    FT_FREE( exec->glyfCvt );
-    exec->glyfCvtSize = 0;
-
-    /* free glyf storage working area */
-    FT_FREE( exec->glyfStorage );
-    exec->glyfStoreSize = 0;
-
-    /* free call stack */
-    FT_FREE( exec->callStack );
-    exec->callSize = 0;
-    exec->callTop  = 0;
-
-    /* free glyph code range */
-    FT_FREE( exec->glyphIns );
-    exec->glyphSize = 0;
-
-    exec->size = NULL;
-    exec->face = NULL;
-
-    FT_FREE( exec );
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   TT_Load_Context
-   *
-   * @Description:
-   *   Prepare an execution context for glyph hinting.
-   *
-   * @Input:
-   *   face ::
-   *     A handle to the source face object.
-   *
-   *   size ::
-   *     A handle to the source size object.
-   *
-   * @InOut:
-   *   exec ::
-   *     A handle to the target execution context.
-   *
-   * @Return:
-   *   FreeType error code.  0 means success.
-   *
-   * @Note:
-   *   Only the glyph loader and debugger should call this function.
-   *
-   *   Note that not all members of `TT_ExecContext` get initialized.
-   */
-  FT_LOCAL_DEF( FT_Error )
-  TT_Load_Context( TT_ExecContext  exec,
-                   TT_Face         face,
-                   TT_Size         size )
-  {
-    FT_Int     i;
-    FT_Long    stackSize;
-    FT_Error   error;
-    FT_Memory  memory = exec->memory;
-
-
-    exec->face = face;
-    exec->size = size;
-
-    if ( size )
-    {
-      exec->numFDefs   = size->num_function_defs;
-      exec->maxFDefs   = size->max_function_defs;
-      exec->numIDefs   = size->num_instruction_defs;
-      exec->maxIDefs   = size->max_instruction_defs;
-      exec->FDefs      = size->function_defs;
-      exec->IDefs      = size->instruction_defs;
-      exec->pointSize  = size->point_size;
-      exec->tt_metrics = size->ttmetrics;
-      exec->metrics    = *size->metrics;
-
-      exec->maxFunc    = size->max_func;
-      exec->maxIns     = size->max_ins;
-
-      for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
-        exec->codeRangeTable[i] = size->codeRangeTable[i];
-
-      /* set graphics state */
-      exec->GS = size->GS;
-
-      exec->cvtSize = size->cvt_size;
-      exec->cvt     = size->cvt;
-
-      exec->storeSize = size->storage_size;
-      exec->storage   = size->storage;
-
-      exec->twilight  = size->twilight;
-
-      /* In case of multi-threading it can happen that the old size object */
-      /* no longer exists, thus we must clear all glyph zone references.   */
-      FT_ZERO( &exec->zp0 );
-      exec->zp1 = exec->zp0;
-      exec->zp2 = exec->zp0;
-    }
-
-    /* XXX: We reserve a little more elements on the stack to deal safely */
-    /*      with broken fonts like arialbs, courbs, timesbs, etc.         */
-    stackSize = face->max_profile.maxStackElements + 32;
-    if ( FT_QRENEW_ARRAY( exec->stack, exec->stackSize, stackSize ) )
-      return error;
-    exec->stackSize = stackSize;
-
-    /* free previous glyph code range */
-    FT_FREE( exec->glyphIns );
-    exec->glyphSize = 0;
-
-    exec->pts.n_points   = 0;
-    exec->pts.n_contours = 0;
-
-    exec->zp1 = exec->pts;
-    exec->zp2 = exec->pts;
-    exec->zp0 = exec->pts;
-
-    exec->callTop = 0;
-    exec->top     = 0;
-
-    exec->instruction_trap = FALSE;
-
-    return FT_Err_Ok;
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   TT_Save_Context
-   *
-   * @Description:
-   *   Saves the code ranges in a `size' object.
-   *
-   * @Input:
-   *   exec ::
-   *     A handle to the source execution context.
-   *
-   * @InOut:
-   *   size ::
-   *     A handle to the target size object.
-   *
-   * @Note:
-   *   Only the glyph loader and debugger should call this function.
-   */
-  FT_LOCAL_DEF( void )
-  TT_Save_Context( TT_ExecContext  exec,
-                   TT_Size         size )
-  {
-    FT_Int  i;
-
-
-    /* XXX: Will probably disappear soon with all the code range */
-    /*      management, which is now rather obsolete.            */
-    /*                                                           */
-    size->num_function_defs    = exec->numFDefs;
-    size->num_instruction_defs = exec->numIDefs;
-
-    size->max_func = exec->maxFunc;
-    size->max_ins  = exec->maxIns;
-
-    for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
-      size->codeRangeTable[i] = exec->codeRangeTable[i];
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   TT_Run_Context
-   *
-   * @Description:
-   *   Executes one or more instructions in the execution context.
-   *
-   * @Input:
-   *   exec ::
-   *     A handle to the target execution context.
-   *
-   * @Return:
-   *   TrueType error code.  0 means success.
-   */
-  FT_LOCAL_DEF( FT_Error )
-  TT_Run_Context( TT_ExecContext  exec )
-  {
-    TT_Goto_CodeRange( exec, tt_coderange_glyph, 0 );
-
-    exec->zp0 = exec->pts;
-    exec->zp1 = exec->pts;
-    exec->zp2 = exec->pts;
-
-    exec->GS.gep0 = 1;
-    exec->GS.gep1 = 1;
-    exec->GS.gep2 = 1;
-
-    exec->GS.projVector.x = 0x4000;
-    exec->GS.projVector.y = 0x0000;
-
-    exec->GS.freeVector = exec->GS.projVector;
-    exec->GS.dualVector = exec->GS.projVector;
-
-    exec->GS.round_state = 1;
-    exec->GS.loop        = 1;
-
-    /* some glyphs leave something on the stack. so we clean it */
-    /* before a new execution.                                  */
-    exec->top     = 0;
-    exec->callTop = 0;
-
-    return exec->face->interpreter( exec );
-  }
-
-
-  /* The default value for `scan_control' is documented as FALSE in the */
-  /* TrueType specification.  This is confusing since it implies a      */
-  /* Boolean value.  However, this is not the case, thus both the       */
-  /* default values of our `scan_type' and `scan_control' fields (which */
-  /* the documentation's `scan_control' variable is split into) are     */
-  /* zero.                                                              */
-
-  const TT_GraphicsState  tt_default_graphics_state =
-  {
-    0, 0, 0,
-    { 0x4000, 0 },
-    { 0x4000, 0 },
-    { 0x4000, 0 },
-
-    1, 64, 1,
-    TRUE, 68, 0, 0, 9, 3,
-    0, FALSE, 0, 1, 1, 1
-  };
-
-
-  /* documentation is in ttinterp.h */
-
-  FT_EXPORT_DEF( TT_ExecContext )
-  TT_New_Context( TT_Driver  driver )
-  {
-    FT_Memory  memory;
-    FT_Error   error;
-
-    TT_ExecContext  exec = NULL;
-
-
-    if ( !driver )
-      goto Fail;
-
-    memory = driver->root.root.memory;
-
-    /* allocate object and zero everything inside */
-    if ( FT_NEW( exec ) )
-      goto Fail;
-
-    /* create callStack here, other allocations delayed */
-    exec->memory   = memory;
-    exec->callSize = 32;
-
-    if ( FT_QNEW_ARRAY( exec->callStack, exec->callSize ) )
-      FT_FREE( exec );
-
-  Fail:
-    return exec;
-  }
-
-
-  /**************************************************************************
-   *
    * Before an opcode is executed, the interpreter verifies that there are
    * enough arguments on the stack, with the help of the `Pop_Push_Count'
    * table.
@@ -7653,6 +7348,311 @@
 
     return exc->error;
   }
+
+  /**************************************************************************
+   *
+   *                  EXECUTION CONTEXT ROUTINES
+   *
+   */
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   TT_Done_Context
+   *
+   * @Description:
+   *   Destroys a given context.
+   *
+   * @Input:
+   *   exec ::
+   *     A handle to the target execution context.
+   *
+   *   memory ::
+   *     A handle to the parent memory object.
+   *
+   * @Note:
+   *   Only the glyph loader and debugger should call this function.
+   */
+  FT_LOCAL_DEF( void )
+  TT_Done_Context( TT_ExecContext  exec )
+  {
+    FT_Memory  memory = exec->memory;
+
+
+    /* points zone */
+    exec->maxPoints   = 0;
+    exec->maxContours = 0;
+
+    /* free stack */
+    FT_FREE( exec->stack );
+    exec->stackSize = 0;
+
+    /* free glyf cvt working area */
+    FT_FREE( exec->glyfCvt );
+    exec->glyfCvtSize = 0;
+
+    /* free glyf storage working area */
+    FT_FREE( exec->glyfStorage );
+    exec->glyfStoreSize = 0;
+
+    /* free call stack */
+    FT_FREE( exec->callStack );
+    exec->callSize = 0;
+    exec->callTop  = 0;
+
+    /* free glyph code range */
+    FT_FREE( exec->glyphIns );
+    exec->glyphSize = 0;
+
+    exec->size = NULL;
+    exec->face = NULL;
+
+    FT_FREE( exec );
+  }
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   TT_Load_Context
+   *
+   * @Description:
+   *   Prepare an execution context for glyph hinting.
+   *
+   * @Input:
+   *   face ::
+   *     A handle to the source face object.
+   *
+   *   size ::
+   *     A handle to the source size object.
+   *
+   * @InOut:
+   *   exec ::
+   *     A handle to the target execution context.
+   *
+   * @Return:
+   *   FreeType error code.  0 means success.
+   *
+   * @Note:
+   *   Only the glyph loader and debugger should call this function.
+   *
+   *   Note that not all members of `TT_ExecContext` get initialized.
+   */
+  FT_LOCAL_DEF( FT_Error )
+  TT_Load_Context( TT_ExecContext  exec,
+                   TT_Face         face,
+                   TT_Size         size )
+  {
+    FT_Int     i;
+    FT_Long    stackSize;
+    FT_Error   error;
+    FT_Memory  memory = exec->memory;
+
+
+    exec->face = face;
+    exec->size = size;
+
+    if ( size )
+    {
+      exec->numFDefs   = size->num_function_defs;
+      exec->maxFDefs   = size->max_function_defs;
+      exec->numIDefs   = size->num_instruction_defs;
+      exec->maxIDefs   = size->max_instruction_defs;
+      exec->FDefs      = size->function_defs;
+      exec->IDefs      = size->instruction_defs;
+      exec->pointSize  = size->point_size;
+      exec->tt_metrics = size->ttmetrics;
+      exec->metrics    = *size->metrics;
+
+      exec->maxFunc    = size->max_func;
+      exec->maxIns     = size->max_ins;
+
+      for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
+        exec->codeRangeTable[i] = size->codeRangeTable[i];
+
+      /* set graphics state */
+      exec->GS = size->GS;
+
+      exec->cvtSize = size->cvt_size;
+      exec->cvt     = size->cvt;
+
+      exec->storeSize = size->storage_size;
+      exec->storage   = size->storage;
+
+      exec->twilight  = size->twilight;
+
+      /* In case of multi-threading it can happen that the old size object */
+      /* no longer exists, thus we must clear all glyph zone references.   */
+      FT_ZERO( &exec->zp0 );
+      exec->zp1 = exec->zp0;
+      exec->zp2 = exec->zp0;
+    }
+
+    /* XXX: We reserve a little more elements on the stack to deal safely */
+    /*      with broken fonts like arialbs, courbs, timesbs, etc.         */
+    stackSize = face->max_profile.maxStackElements + 32;
+    if ( FT_QRENEW_ARRAY( exec->stack, exec->stackSize, stackSize ) )
+      return error;
+    exec->stackSize = stackSize;
+
+    /* free previous glyph code range */
+    FT_FREE( exec->glyphIns );
+    exec->glyphSize = 0;
+
+    exec->pts.n_points   = 0;
+    exec->pts.n_contours = 0;
+
+    exec->zp1 = exec->pts;
+    exec->zp2 = exec->pts;
+    exec->zp0 = exec->pts;
+
+    exec->callTop = 0;
+    exec->top     = 0;
+
+    exec->instruction_trap = FALSE;
+
+    return FT_Err_Ok;
+  }
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   TT_Save_Context
+   *
+   * @Description:
+   *   Saves the code ranges in a `size' object.
+   *
+   * @Input:
+   *   exec ::
+   *     A handle to the source execution context.
+   *
+   * @InOut:
+   *   size ::
+   *     A handle to the target size object.
+   *
+   * @Note:
+   *   Only the glyph loader and debugger should call this function.
+   */
+  FT_LOCAL_DEF( void )
+  TT_Save_Context( TT_ExecContext  exec,
+                   TT_Size         size )
+  {
+    FT_Int  i;
+
+
+    /* XXX: Will probably disappear soon with all the code range */
+    /*      management, which is now rather obsolete.            */
+    /*                                                           */
+    size->num_function_defs    = exec->numFDefs;
+    size->num_instruction_defs = exec->numIDefs;
+
+    size->max_func = exec->maxFunc;
+    size->max_ins  = exec->maxIns;
+
+    for ( i = 0; i < TT_MAX_CODE_RANGES; i++ )
+      size->codeRangeTable[i] = exec->codeRangeTable[i];
+  }
+
+
+  /**************************************************************************
+   *
+   * @Function:
+   *   TT_Run_Context
+   *
+   * @Description:
+   *   Executes one or more instructions in the execution context.
+   *
+   * @Input:
+   *   exec ::
+   *     A handle to the target execution context.
+   *
+   * @Return:
+   *   TrueType error code.  0 means success.
+   */
+  FT_LOCAL_DEF( FT_Error )
+  TT_Run_Context( TT_ExecContext  exec )
+  {
+    TT_Goto_CodeRange( exec, tt_coderange_glyph, 0 );
+
+    exec->zp0 = exec->pts;
+    exec->zp1 = exec->pts;
+    exec->zp2 = exec->pts;
+
+    exec->GS.gep0 = 1;
+    exec->GS.gep1 = 1;
+    exec->GS.gep2 = 1;
+
+    exec->GS.projVector.x = 0x4000;
+    exec->GS.projVector.y = 0x0000;
+
+    exec->GS.freeVector = exec->GS.projVector;
+    exec->GS.dualVector = exec->GS.projVector;
+
+    exec->GS.round_state = 1;
+    exec->GS.loop        = 1;
+
+    /* some glyphs leave something on the stack. so we clean it */
+    /* before a new execution.                                  */
+    exec->top     = 0;
+    exec->callTop = 0;
+
+    return exec->face->interpreter( exec );
+  }
+
+
+  /* The default value for `scan_control' is documented as FALSE in the */
+  /* TrueType specification.  This is confusing since it implies a      */
+  /* Boolean value.  However, this is not the case, thus both the       */
+  /* default values of our `scan_type' and `scan_control' fields (which */
+  /* the documentation's `scan_control' variable is split into) are     */
+  /* zero.                                                              */
+
+  const TT_GraphicsState  tt_default_graphics_state =
+  {
+    0, 0, 0,
+    { 0x4000, 0 },
+    { 0x4000, 0 },
+    { 0x4000, 0 },
+
+    1, 64, 1,
+    TRUE, 68, 0, 0, 9, 3,
+    0, FALSE, 0, 1, 1, 1
+  };
+
+
+  /* documentation is in ttinterp.h */
+
+  FT_EXPORT_DEF( TT_ExecContext )
+  TT_New_Context( TT_Driver  driver )
+  {
+    FT_Memory  memory;
+    FT_Error   error;
+
+    TT_ExecContext  exec = NULL;
+
+
+    if ( !driver )
+      goto Fail;
+
+    memory = driver->root.root.memory;
+
+    /* allocate object and zero everything inside */
+    if ( FT_NEW( exec ) )
+      goto Fail;
+
+    /* create callStack here, other allocations delayed */
+    exec->memory   = memory;
+    exec->callSize = 32;
+
+    if ( FT_QNEW_ARRAY( exec->callStack, exec->callSize ) )
+      FT_FREE( exec );
+
+  Fail:
+    return exec;
+  }
+
 
 #else /* !TT_USE_BYTECODE_INTERPRETER */
 
