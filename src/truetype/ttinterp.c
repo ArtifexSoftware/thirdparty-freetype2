@@ -6643,27 +6643,6 @@
     FT_TRACE5(( "TT_RunIns: Limiting total number of backward jumps"
                 " to %ld\n", exc->neg_jump_counter_max ));
 
-    /* set PPEM and CVT functions */
-    if ( exc->metrics.x_ppem != exc->metrics.y_ppem )
-    {
-      /* non-square pixels, use the stretched routines */
-      exc->func_cur_ppem  = Current_Ppem_Stretched;
-      exc->func_read_cvt  = Read_CVT_Stretched;
-      exc->func_write_cvt = Write_CVT_Stretched;
-      exc->func_move_cvt  = Move_CVT_Stretched;
-    }
-    else
-    {
-      /* square pixels, use normal routines */
-      exc->func_cur_ppem  = Current_Ppem;
-      exc->func_read_cvt  = Read_CVT;
-      exc->func_write_cvt = Write_CVT;
-      exc->func_move_cvt  = Move_CVT;
-    }
-
-    Compute_Funcs( exc );
-    Compute_Round( exc, (FT_Byte)exc->GS.round_state );
-
     do
     {
       /* increment instruction counter and check if we didn't */
@@ -7488,6 +7467,27 @@
       exec->zp1 = exec->zp0;
       exec->zp2 = exec->zp0;
     }
+
+    /* set PPEM and CVT functions */
+    if ( exec->metrics.x_ppem != exec->metrics.y_ppem )
+    {
+      /* non-square pixels, use the stretched routines */
+      exec->func_cur_ppem  = Current_Ppem_Stretched;
+      exec->func_read_cvt  = Read_CVT_Stretched;
+      exec->func_write_cvt = Write_CVT_Stretched;
+      exec->func_move_cvt  = Move_CVT_Stretched;
+    }
+    else
+    {
+      /* square pixels, use normal routines */
+      exec->func_cur_ppem  = Current_Ppem;
+      exec->func_read_cvt  = Read_CVT;
+      exec->func_write_cvt = Write_CVT;
+      exec->func_move_cvt  = Move_CVT;
+    }
+
+    Compute_Funcs( exec );
+    Compute_Round( exec, (FT_Byte)exec->GS.round_state );
 
     /* XXX: We reserve a little more elements on the stack to deal safely */
     /*      with broken fonts like arialbs, courbs, timesbs, etc.         */

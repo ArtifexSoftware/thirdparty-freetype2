@@ -912,20 +912,6 @@
     exec->phase     = 0;
     exec->threshold = 0;
 
-    {
-      FT_Size_Metrics*  size_metrics = &exec->metrics;
-      TT_Size_Metrics*  tt_metrics   = &exec->tt_metrics;
-
-
-      size_metrics->x_ppem   = 0;
-      size_metrics->y_ppem   = 0;
-      size_metrics->x_scale  = 0;
-      size_metrics->y_scale  = 0;
-
-      tt_metrics->ppem  = 0;
-      tt_metrics->scale = 0;
-    }
-
     /* allow font program execution */
     TT_Set_CodeRange( exec,
                       tt_coderange_font,
