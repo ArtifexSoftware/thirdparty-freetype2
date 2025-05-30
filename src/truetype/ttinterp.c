@@ -7434,7 +7434,7 @@
     exec->GS = size->GS;
     Compute_Funcs( exec );
 
-    exc->func_round = (TT_Round_Func)Round_To_Grid;
+    exec->func_round = (TT_Round_Func)Round_To_Grid;
 
     exec->twilight  = size->twilight;
 
