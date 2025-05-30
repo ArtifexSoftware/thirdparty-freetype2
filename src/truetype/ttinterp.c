@@ -1867,59 +1867,6 @@
   /**************************************************************************
    *
    * @Function:
-   *   Compute_Round
-   *
-   * @Description:
-   *   Sets the rounding mode.
-   *
-   * @Input:
-   *   round_mode ::
-   *     The rounding mode to be used.
-   */
-  static void
-  Compute_Round( TT_ExecContext  exc,
-                 FT_Byte         round_mode )
-  {
-    switch ( round_mode )
-    {
-    case TT_Round_Off:
-      exc->func_round = (TT_Round_Func)Round_None;
-      break;
-
-    case TT_Round_To_Grid:
-      exc->func_round = (TT_Round_Func)Round_To_Grid;
-      break;
-
-    case TT_Round_Up_To_Grid:
-      exc->func_round = (TT_Round_Func)Round_Up_To_Grid;
-      break;
-
-    case TT_Round_Down_To_Grid:
-      exc->func_round = (TT_Round_Func)Round_Down_To_Grid;
-      break;
-
-    case TT_Round_To_Half_Grid:
-      exc->func_round = (TT_Round_Func)Round_To_Half_Grid;
-      break;
-
-    case TT_Round_To_Double_Grid:
-      exc->func_round = (TT_Round_Func)Round_To_Double_Grid;
-      break;
-
-    case TT_Round_Super:
-      exc->func_round = (TT_Round_Func)Round_Super;
-      break;
-
-    case TT_Round_Super_45:
-      exc->func_round = (TT_Round_Func)Round_Super_45;
-      break;
-    }
-  }
-
-
-  /**************************************************************************
-   *
-   * @Function:
    *   SetSuperRound
    *
    * @Description:
@@ -7486,7 +7433,8 @@
     /* set graphics state */
     exec->GS = size->GS;
     Compute_Funcs( exec );
-    Compute_Round( exec, (FT_Byte)exec->GS.round_state );
+
+    exc->func_round = (TT_Round_Func)Round_To_Grid;
 
     exec->twilight  = size->twilight;
 
@@ -7532,9 +7480,20 @@
     FT_Int  i;
 
 
-    /* XXX: Will probably disappear soon with all the code range */
-    /*      management, which is now rather obsolete.            */
-    /*                                                           */
+    /* UNDOCUMENTED!                                          */
+    /* Only these values can be movified by the CVT program.  */
+
+    size->GS.minimum_distance    = exec->GS.minimum_distance;
+    size->GS.auto_flip           = exec->GS.auto_flip;
+    size->GS.control_value_cutin = exec->GS.control_value_cutin;
+    size->GS.single_width_cutin  = exec->GS.single_width_cutin;
+    size->GS.single_width_value  = exec->GS.single_width_value;
+    size->GS.delta_base          = exec->GS.delta_base;
+    size->GS.delta_shift         = exec->GS.delta_shift;
+    size->GS.instruct_control    = exec->GS.instruct_control;
+    size->GS.scan_control        = exec->GS.scan_control;
+    size->GS.scan_type           = exec->GS.scan_type;
+
     size->num_function_defs    = exec->numFDefs;
     size->num_instruction_defs = exec->numIDefs;
 
@@ -7569,24 +7528,6 @@
     exec->zp0 = exec->pts;
     exec->zp1 = exec->pts;
     exec->zp2 = exec->pts;
-
-    exec->GS.gep0 = 1;
-    exec->GS.gep1 = 1;
-    exec->GS.gep2 = 1;
-
-    exec->GS.projVector.x = 0x4000;
-    exec->GS.projVector.y = 0x0000;
-
-    exec->GS.freeVector = exec->GS.projVector;
-    exec->GS.dualVector = exec->GS.projVector;
-
-    exec->GS.round_state = 1;
-    exec->GS.loop        = 1;
-
-    /* some glyphs leave something on the stack. so we clean it */
-    /* before a new execution.                                  */
-    exec->top     = 0;
-    exec->callTop = 0;
 
     return exec->face->interpreter( exec );
   }
