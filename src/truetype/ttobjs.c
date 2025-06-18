@@ -67,23 +67,17 @@
    *     A pointer to the target glyph zone.
    */
   FT_LOCAL_DEF( void )
-  tt_glyphzone_done( TT_GlyphZone  zone )
+  tt_glyphzone_done( FT_Memory     memory,
+                     TT_GlyphZone  zone )
   {
-    FT_Memory  memory = zone->memory;
+    FT_FREE( zone->contours );
+    FT_FREE( zone->tags );
+    FT_FREE( zone->cur );
+    FT_FREE( zone->org );
+    FT_FREE( zone->orus );
 
-
-    if ( memory )
-    {
-      FT_FREE( zone->contours );
-      FT_FREE( zone->tags );
-      FT_FREE( zone->cur );
-      FT_FREE( zone->org );
-      FT_FREE( zone->orus );
-
-      zone->n_points   = 0;
-      zone->n_contours = 0;
-      zone->memory     = NULL;
-    }
+    zone->n_points   = 0;
+    zone->n_contours = 0;
   }
 
 
@@ -122,7 +116,6 @@
 
 
     FT_ZERO( zone );
-    zone->memory = memory;
 
     if ( FT_NEW_ARRAY( zone->org,      maxPoints   ) ||
          FT_NEW_ARRAY( zone->cur,      maxPoints   ) ||
@@ -130,7 +123,7 @@
          FT_NEW_ARRAY( zone->tags,     maxPoints   ) ||
          FT_NEW_ARRAY( zone->contours, maxContours ) )
     {
-      tt_glyphzone_done( zone );
+      tt_glyphzone_done( memory, zone );
     }
     else
     {
@@ -1038,7 +1031,7 @@
     size->storage_size = 0;
 
     /* twilight zone */
-    tt_glyphzone_done( &size->twilight );
+    tt_glyphzone_done( memory, &size->twilight );
 
     FT_FREE( size->function_defs );
     FT_FREE( size->instruction_defs );
@@ -1073,7 +1066,7 @@
     FT_FREE( size->instruction_defs );
     FT_FREE( size->cvt );
     FT_FREE( size->storage );
-    tt_glyphzone_done( &size->twilight );
+    tt_glyphzone_done( memory, &size->twilight );
 
     if ( exec )
       TT_Done_Context( exec );
