@@ -1062,9 +1062,6 @@
 
     size->max_func = 0;
     size->max_ins  = 0;
-
-    size->bytecode_ready = -1;
-    size->cvt_ready      = -1;
   }
 
 
@@ -1092,9 +1089,6 @@
       TT_Done_Context( size->context );
     tt_glyphzone_done( &size->twilight );
 
-    size->bytecode_ready = -1;
-    size->cvt_ready      = -1;
-
     size->context = TT_New_Context( (TT_Driver)face->root.driver );
     if ( !size->context )
       return FT_THROW( Could_Not_Find_Context );
@@ -1108,6 +1102,7 @@
     size->max_func = 0;
     size->max_ins  = 0;
 
+    size->cvt_ready    = -1;
     size->cvt_size     = face->cvt_size;
     size->storage_size = maxp->maxStorage;
 
@@ -1197,7 +1192,6 @@
 
 #ifdef TT_USE_BYTECODE_INTERPRETER
     size->bytecode_ready = -1;
-    size->cvt_ready      = -1;
 #endif
 
     size->ttmetrics.valid = FALSE;
