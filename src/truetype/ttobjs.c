@@ -884,15 +884,11 @@
    *   size ::
    *     A handle to the size object.
    *
-   *   pedantic ::
-   *     Set if bytecode execution should be pedantic.
-   *
    * @Return:
    *   FreeType error code.  0 means success.
    */
   FT_LOCAL_DEF( FT_Error )
-  tt_size_run_fpgm( TT_Size  size,
-                    FT_Bool  pedantic )
+  tt_size_run_fpgm( TT_Size  size )
   {
     TT_Face         face = (TT_Face)size->root.face;
     TT_ExecContext  exec;
@@ -904,8 +900,6 @@
     error = TT_Load_Context( exec, face, size );
     if ( error )
       return error;
-
-    exec->pedantic_hinting = pedantic;
 
     /* disable CVT and glyph programs coderange */
     TT_Clear_CodeRange( exec, tt_coderange_cvt );
@@ -951,15 +945,11 @@
    *   size ::
    *     A handle to the size object.
    *
-   *   pedantic ::
-   *     Set if bytecode execution should be pedantic.
-   *
    * @Return:
    *   FreeType error code.  0 means success.
    */
   FT_LOCAL_DEF( FT_Error )
-  tt_size_run_prep( TT_Size  size,
-                    FT_Bool  pedantic )
+  tt_size_run_prep( TT_Size  size )
   {
     TT_Face         face = (TT_Face)size->root.face;
     TT_ExecContext  exec;
@@ -997,8 +987,6 @@
     error = TT_Load_Context( exec, face, size );
     if ( error )
       return error;
-
-    exec->pedantic_hinting = pedantic;
 
     TT_Clear_CodeRange( exec, tt_coderange_glyph );
 
@@ -1077,6 +1065,7 @@
 
     FT_UShort       n_twilight;
     TT_MaxProfile*  maxp = &face->max_profile;
+    TT_ExecContext  exec = size->context;
 
 
     /* clean up bytecode related data */
@@ -1084,14 +1073,17 @@
     FT_FREE( size->instruction_defs );
     FT_FREE( size->cvt );
     FT_FREE( size->storage );
-
-    if ( size->context )
-      TT_Done_Context( size->context );
     tt_glyphzone_done( &size->twilight );
 
-    size->context = TT_New_Context( (TT_Driver)face->root.driver );
-    if ( !size->context )
+    if ( exec )
+      TT_Done_Context( exec );
+
+    exec = TT_New_Context( (TT_Driver)face->root.driver );
+    if ( !exec )
       return FT_THROW( Could_Not_Find_Context );
+
+    exec->pedantic_hinting = pedantic;
+    size->context          = exec;
 
     size->max_function_defs    = maxp->maxFunctionDefs;
     size->max_instruction_defs = maxp->maxInstructionDefs;
@@ -1155,7 +1147,7 @@
     /* to be executed just once; calling it again is completely useless   */
     /* and might even lead to extremely slow behaviour if it is malformed */
     /* (containing an infinite loop, for example).                        */
-    error = tt_size_run_fpgm( size, pedantic );
+    error = tt_size_run_fpgm( size );
     return error;
 
   Exit:
