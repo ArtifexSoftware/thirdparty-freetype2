@@ -2213,32 +2213,28 @@
       TT_Driver       driver   = (TT_Driver)FT_FACE_DRIVER( glyph->face );
 
 
-      if ( size->bytecode_ready < 0 || size->cvt_ready < 0 )
+      if ( size->bytecode_ready > 0 )
+        return size->bytecode_ready;
+      if ( size->bytecode_ready < 0 )
       {
-        error = tt_size_ready_bytecode( size, pedantic );
+        error = tt_size_init_bytecode( size, pedantic );
         if ( error )
           return error;
       }
-      else if ( size->bytecode_ready )
-        return size->bytecode_ready;
-      else if ( size->cvt_ready )
-        return size->cvt_ready;
 
-      /* query new execution context */
-      exec = size->context;
-      if ( !exec )
-        return FT_THROW( Could_Not_Find_Context );
-
+      exec                   = size->context;
       exec->pedantic_hinting = pedantic;
 
-      /* we likely need to re-execute the CV program if the mode changed */
-      if ( mode != exec->mode                                           &&
-           ( driver->interpreter_version != TT_INTERPRETER_VERSION_35 ||
-             ( exec->mode == FT_RENDER_MODE_MONO ) !=
-                   ( mode == FT_RENDER_MODE_MONO )                    ) )
+      if ( size->cvt_ready > 0 )
+        return size->cvt_ready;
+      if ( size->cvt_ready < 0 ||
+           /* if mode has been changed, we rerun the CV program */
+           ( mode != exec->mode                                           &&
+             ( driver->interpreter_version != TT_INTERPRETER_VERSION_35 ||
+               ( exec->mode == FT_RENDER_MODE_MONO ) !=
+                     ( mode == FT_RENDER_MODE_MONO )                    ) ) )
       {
-        FT_TRACE4(( "tt_loader_init: rendering mode change,"
-                    " re-executing `prep' table\n" ));
+        FT_TRACE4(( "tt_loader_init: executing `prep' table\n" ));
 
         exec->mode = mode;
 
