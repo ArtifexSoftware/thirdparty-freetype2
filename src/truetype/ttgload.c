@@ -2099,7 +2099,6 @@
   {
     TT_Face             face   = (TT_Face)glyph->face;
     SFNT_Service        sfnt   = (SFNT_Service)face->sfnt;
-    FT_Stream           stream = face->root.stream;
     FT_Error            error;
     TT_SBit_MetricsRec  sbit_metrics;
 
@@ -2108,7 +2107,7 @@
                                    size->strike_index,
                                    glyph_index,
                                    (FT_UInt)load_flags,
-                                   stream,
+                                   face->root.stream,
                                    &glyph->bitmap,
                                    &sbit_metrics );
     if ( !error )
@@ -2196,7 +2195,6 @@
                   FT_Bool       glyf_table_only )
   {
     TT_Face    face   = (TT_Face)glyph->face;
-    FT_Stream  stream = face->root.stream;
 
 
     FT_ZERO( loader );
@@ -2209,7 +2207,7 @@
       FT_Error        error;
       TT_ExecContext  exec;
       FT_Render_Mode  mode   = FT_LOAD_TARGET_MODE( load_flags );
-      TT_Driver       driver = (TT_Driver)FT_FACE_DRIVER( glyph->face );
+      TT_Driver       driver = (TT_Driver)FT_FACE_DRIVER( face );
 
 
       if ( size->bytecode_ready > 0 )
@@ -2217,6 +2215,7 @@
       if ( size->bytecode_ready < 0 )
       {
         FT_Bool  pedantic = FT_BOOL( load_flags & FT_LOAD_PEDANTIC );
+
 
         error = tt_size_init_bytecode( size, pedantic );
         if ( error )
@@ -2283,12 +2282,12 @@
       /* is set or backward compatibility mode of the v38 or v40  */
       /* interpreters is active.  See `ttinterp.h' for details on */
       /* backward compatibility mode.                             */
-      if ( IS_HINTED( loader->load_flags )                   &&
-           !( loader->load_flags & FT_LOAD_COMPUTE_METRICS ) &&
+      if ( IS_HINTED( load_flags )                   &&
+           !( load_flags & FT_LOAD_COMPUTE_METRICS ) &&
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-           !exec->backward_compatibility                     &&
+           !exec->backward_compatibility             &&
 #endif
-           !face->postscript.isFixedPitch                    )
+           !face->postscript.isFixedPitch            )
       {
         loader->widthp = size->widthp;
       }
@@ -2313,7 +2312,7 @@
     loader->face   = face;
     loader->size   = size;
     loader->glyph  = (FT_GlyphSlot)glyph;
-    loader->stream = stream;
+    loader->stream = face->root.stream;
 
     loader->composites.head = NULL;
     loader->composites.tail = NULL;
