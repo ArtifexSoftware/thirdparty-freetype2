@@ -117,76 +117,29 @@
                   FT_Byte*   limit,
                   FT_UInt32* value )
   {
-    FT_Byte    b0;
-    FT_UInt32  result;
+    FT_UInt32  result = 0;
+    FT_UInt32  m      = 0x80;  /* the first desision bit */
 
 
-    if ( *p >= limit )
-      return FT_THROW( Invalid_Table );
-
-    b0 = *(*p)++;
-
-    /* single byte: 0xxxxxxx */
-    if ( b0 < 0x80 )
-    {
-      *value = b0;
-      return FT_Err_Ok;
-    }
-
-    /* two bytes: 10xxxxxx xxxxxxxx */
-    if ( b0 < 0xC0 )
+    while ( 1 )
     {
       if ( *p >= limit )
         return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0x80 ) << 8 ) |
-                 *(*p)++;
-      *value = result;
-      return FT_Err_Ok;
+
+      result |= *(*p)++;
+
+      if ( result & m )
+      {
+        m      << 7;  /* the next decision bit */
+        result << 8;
+      }
+      else
+        break;
     }
 
-    /* three bytes: 110xxxxx xxxxxxxx xxxxxxxx */
-    if ( b0 < 0xE0 )
-    {
-      if ( *p + 1 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0xC0 ) << 16 ) |
-               ( (*p)[0]       << 8  ) |
-                 (*p)[1];
-      *p += 2;
-      *value = result;
-      return FT_Err_Ok;
-    }
+    *value = result & ( m - 1 );  /* dropping the decision bits */
 
-    /* four bytes: 1110xxxx xxxxxxxx xxxxxxxx xxxxxxxx */
-    if ( b0 < 0xF0 )
-    {
-      if ( *p + 2 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( ( b0 - 0xE0 ) << 24 ) |
-               ( (*p)[0]       << 16 ) |
-               ( (*p)[1]       << 8  ) |
-                 (*p)[2];
-      *p += 3;
-      *value = result;
-      return FT_Err_Ok;
-    }
-
-    /* five bytes: 11110000 xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx */
-    if ( b0 == 0xF0 )
-    {
-      if ( *p + 3 >= limit )
-        return FT_THROW( Invalid_Table );
-      result = ( (FT_UInt32)(*p)[0] << 24 ) |
-               ( (FT_UInt32)(*p)[1] << 16 ) |
-               ( (FT_UInt32)(*p)[2] << 8  ) |
-                 (FT_UInt32)(*p)[3];
-      *p += 4;
-      *value = result;
-      return FT_Err_Ok;
-    }
-
-    /* invalid encoding */
-    return FT_THROW( Invalid_Table );
+    return FT_Err_Ok;
   }
 
 
